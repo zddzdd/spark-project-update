@@ -1,0 +1,101 @@
+MySQL中的业务表的结构
+业务：页面单跳跳转化率分析建表如下：
+CREATE TABLE `page_split_convert_rate` (
+  `taskid` int(11) NOT NULL AUTO_INCREMENT COMMENT '唯一标识一个任务',
+  `convert_rate` varchar(255) DEFAULT NULL COMMENT '页面流中，各个页面切片的转化率，以特定的格式拼接起来，作为这个字段的值',
+  PRIMARY KEY (`taskid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+额外的一张表：task表，用来存储J2EE平台插入其中的任务的信息
+CREATE TABLE `task` (
+  `task_id` int(11) NOT NULL AUTO_INCREMENT,
+  `task_name` varchar(255) DEFAULT NULL,
+  `create_time` varchar(255) DEFAULT NULL,
+  `start_time` varchar(255) DEFAULT NULL,
+  `finish_time` varchar(255) DEFAULT NULL,
+  `task_type` varchar(255) DEFAULT NULL,
+  `task_status` varchar(255) DEFAULT NULL,
+  `task_param` text,
+  PRIMARY KEY (`task_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=utf8;
+
+{"targetPageFlow":"1,2,3,4,5,6,7,8,9","startDate":["2029-05-08"],"endDate":["2020-05-08"]}
+
+hive表：
+create table user_visit_action(
+`date` string,
+user_id bigint,
+session_id string,
+page_id bigint,
+action_time string,
+search_keyword string,
+click_category_id bigint,
+click_product_id bigint,
+click_category_ids string,
+click_product_ids string,
+pay_category_ids string,
+pay_product_ids string,
+city_id bigint
+);
+load data local inpath 'user_visit_action.txt' into table user_visit_action;
+
+create table user_info(
+user_id bigint,
+username string,
+name string,
+age bigint,
+professional string,
+city string,
+sex string
+);
+load data local inpath 'user_info.txt' into table user_info;
+
+拷贝一份taskid为3的数据插入到表中
+insert into task(task_name,task_param) select task_name,task_param from task where task_id=3;
+update task set task_param='{"targetPageFlow":"1,3,4,5,6,7,9","startDate":["2015-12-18"],"endDate":["2015-12-18"]}';
+insert into task()
+
+提交脚本
+spark_page.sh:
+/usr/local/src/spark-2.1.0-bin-hadoop2.7/bin/spark-submit \
+--class com.micro.bigData.spark.page.PageConverRate \
+--num-executors 1 \
+--driver-memory 1000m \
+--executor-memory 1000m \
+--executor-cores 1 \
+--files /usr/local/src/spark-2.1.0-bin-hadoop2.7/conf/hive-site.xml \
+#--driver-class-path /usr/local/spark_project/mysql-connector-java-5.1.47.jar \
+/usr/local/spark_project/micro-big-data-1.0-SNAPSHOT-jar-with-dependencies.jar \
+${1}
+
+
+
+执行：
+./spark_page.sh 5
+第一步配置：
+--files /usr/local/hive/conf/hive-site.xml \
+--driver-class-path /mysql-connector-java.jar \
+第二步，拷贝hive-site到spark的conf下
+第三步，权限分配：Hadoop fs -chmod 777 /tmp/hive-root
+hadoop fs -lsr /tmp
+
+数据
+{"taskName":"test",
+"startTime":"2020-05-18",
+"finishTime":"2020-05-18",
+"taskType":"1",
+"targetPageFlow":"1,2,3,4,5"
+}
+taskName=test
+startTime=2020-05-18
+finishTime=2020-05-18
+taskType=1
+targetPageFlow=1,2,3,4,5
+
+
+hive表创建
+create table product_info(
+product_id bigint,
+product_name string,
+extend_info string
+);
